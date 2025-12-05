@@ -139,6 +139,7 @@ target_link_libraries(orb_slam3_lib
   -lboost_system
   -lboost_serialization
   -lcrypto 
+  -lcurl
 )
 
 

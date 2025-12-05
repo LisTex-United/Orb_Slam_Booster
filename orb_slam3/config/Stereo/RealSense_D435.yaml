@@ -7,19 +7,20 @@ File.version: "1.0"
 
 Camera.type: "Rectified"
 
-# Camera calibration and distortion parameters (OpenCV) 
-Camera1.fx: 707.0912
-Camera1.fy: 707.0912
-Camera1.cx: 601.8873
-Camera1.cy: 183.1104
+# Rectified Camera calibration and distortion parameters (OpenCV)
+Camera1.fx: 615.565
+Camera1.fy: 616.080
+Camera1.cx: 326.904
+Camera1.cy: 243.230
 
-Camera.width: 1241
-Camera.height: 376
+Stereo.b: 0.0499585
+
+# Camera resolution
+Camera.width: 640
+Camera.height: 480
 
 # Camera frames per second 
-Camera.fps: 10
-
-Stereo.b: 0.53715
+Camera.fps: 30
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
@@ -30,34 +31,32 @@ Stereo.ThDepth: 40.0
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------
-
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 2000
+ORBextractor.nFeatures: 1250
 
-# ORB Extractor: Scale factor between levels in the scale pyramid 	
+# ORB Extractor: Scale factor between levels in the scale pyramid   
 ORBextractor.scaleFactor: 1.2
 
-# ORB Extractor: Number of levels in the scale pyramid	
+# ORB Extractor: Number of levels in the scale pyramid  
 ORBextractor.nLevels: 8
 
 # ORB Extractor: Fast threshold
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
 # Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
-# You can lower these values if your images have low contrast			
-ORBextractor.iniThFAST: 12
+# You can lower these values if your images have low contrast     
+ORBextractor.iniThFAST: 20
 ORBextractor.minThFAST: 7
 
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters
 #--------------------------------------------------------------------------------------------
-Viewer.KeyFrameSize: 0.6
-Viewer.KeyFrameLineWidth: 2.0
-Viewer.GraphLineWidth: 1.0
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
 Viewer.PointSize: 2.0
-Viewer.CameraSize: 0.7
+Viewer.CameraSize: 0.08
 Viewer.CameraLineWidth: 3.0
 Viewer.ViewpointX: 0.0
-Viewer.ViewpointY: -100.0
-Viewer.ViewpointZ: -0.1
-Viewer.ViewpointF: 2000.0
-
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -3.5
+Viewer.ViewpointF: 500.0
