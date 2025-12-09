@@ -201,16 +201,4 @@ ament_export_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
-
-# Python node
-# Install Python modules, submodules
-ament_python_install_package(${PROJECT_NAME}) # Install the modules in ros2_orb_slam3/ros2_orb_slam3 folder
-
-# Install Python executibles
-install(PROGRAMS
-  scripts/mono_driver_node.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-
 ament_package()

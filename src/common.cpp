@@ -62,7 +62,7 @@ MonocularMode::MonocularMode() : Node("mono_node_cpp")
     RCLCPP_INFO(this->get_logger(), "voc_file %s", vocFilePath.c_str());
     this->initializeVSLAM(cameraFilePath);                      // Initialize VSLAM with camera settings
 
-    subImgMsgName = "/camera/camera/color/image_rect";                          // topic to receive RGB image messages
+    subImgMsgName = "/camera/camera/color/image_raw";                          // topic to receive RGB image messages
 
     //* subscrbite to the image messages coming from the Python driver node
     subImgMsg_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(subImgMsgName, 1, std::bind(&MonocularMode::Img_callback, this, _1));
