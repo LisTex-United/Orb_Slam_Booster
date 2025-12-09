@@ -68,12 +68,12 @@ public:
 
 private:
     // Class internal variables
-    std::string homeDir = "";
     std::string packagePath = ""; // Dynamically determined from current executable path
     std::string OPENCV_WINDOW = "";                            // Set during initialization
     std::string nodeName = "";                                 // Name of this node
     std::string vocFilePath = "";                              // Path to ORB vocabulary provided by DBoW2 package
     std::string settingsFilePath = "";                         // Path to settings file provided by ORB_SLAM3 package
+    std::string cameraFilePath = "";                           // Path to camera parameters file
     bool bSettingsFromPython = false;                          // Flag set once when experiment setting from python node is received
 
     std::string subexperimentconfigName = ""; // Subscription topic name

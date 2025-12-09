@@ -180,6 +180,18 @@ install(TARGETS mono_node_cpp orb_slam3_lib
   INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
+# Install config files
+install(DIRECTORY
+  orb_slam3/config/
+  DESTINATION orb_slam3/config
+)
+
+# Install vocabulary files
+install(DIRECTORY
+  orb_slam3/Vocabulary/
+  DESTINATION orb_slam3/Vocabulary
+)
+
 # Tell downstream packages where to find the headers
 ament_export_include_directories(include)
 
