@@ -15,6 +15,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules) # REDUNDANT?
 find_package(Python3 REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -47,6 +48,7 @@ include_directories(
 
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  ament_index_cpp
   rclcpp
   rclpy
   std_msgs

@@ -17,6 +17,8 @@
 #include <sstream> // String stream processing functionalities
 
 //* ROS2 includes
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_prefix.hpp>
 //* std_msgs in ROS 2 https://docs.ros2.org/foxy/api/std_msgs/index-msg.html
 #include "rclcpp/rclcpp.hpp"
 
@@ -67,7 +69,7 @@ public:
 private:
     // Class internal variables
     std::string homeDir = "";
-    std::string packagePath = "ros2_test/src/ros2_orb_slam3/"; //! Change to match path to your workspace
+    std::string packagePath = ""; // Dynamically determined from current executable path
     std::string OPENCV_WINDOW = "";                            // Set during initialization
     std::string nodeName = "";                                 // Name of this node
     std::string vocFilePath = "";                              // Path to ORB vocabulary provided by DBoW2 package

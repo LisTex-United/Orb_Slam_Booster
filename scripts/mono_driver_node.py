@@ -102,7 +102,7 @@ class MonoDriver(Node):
         
         self.camera_img_sub_ = self.create_subscription(
             Image,
-            '/camera/camera/color/image_raw',
+            '/camera/camera/color/image_rect',
             self.camera_image_callback,
             10
         )
