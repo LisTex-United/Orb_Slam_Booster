@@ -15,8 +15,6 @@ int main(int argc, char **argv){
     
     //* Declare a node object
     auto node = std::make_shared<MonocularMode>(); 
-    
-    // rclcpp::Rate rate(20); // Set the desired update rate (e.g., 10 Hz)
 
     rclcpp::spin(node); // Blocking node
     rclcpp::shutdown();

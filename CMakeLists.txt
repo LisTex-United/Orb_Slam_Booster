@@ -15,6 +15,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules) # REDUNDANT?
 find_package(Python3 REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -47,6 +48,7 @@ include_directories(
 
 
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  ament_index_cpp
   rclcpp
   rclpy
   std_msgs
@@ -178,6 +180,18 @@ install(TARGETS mono_node_cpp orb_slam3_lib
   INCLUDES DESTINATION include/${PROJECT_NAME}
 )
 
+# Install config files
+install(DIRECTORY
+  orb_slam3/config/
+  DESTINATION orb_slam3/config
+)
+
+# Install vocabulary files
+install(DIRECTORY
+  orb_slam3/Vocabulary/
+  DESTINATION orb_slam3/Vocabulary
+)
+
 # Tell downstream packages where to find the headers
 ament_export_include_directories(include)
 
@@ -186,17 +200,5 @@ ament_export_dependencies(
   orb_slam3_lib
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
-
-
-# Python node
-# Install Python modules, submodules
-ament_python_install_package(${PROJECT_NAME}) # Install the modules in ros2_orb_slam3/ros2_orb_slam3 folder
-
-# Install Python executibles
-install(PROGRAMS
-  scripts/mono_driver_node.py
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 
 ament_package()
