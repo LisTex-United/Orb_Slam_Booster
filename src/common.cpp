@@ -94,8 +94,11 @@ MonocularMode::~MonocularMode()
 void MonocularMode::runBoosterSubscriber()
 {
     // Create subscriber with lambda that calls member function
-    ChannelSubscriber<LowState> channel_subscriber(TOPIC, this->BoosterImuHandler);
-    channel_subscriber->InitChannel();
+    ChannelSubscriber<LowState> channel_subscriber(
+        TOPIC, 
+        [this](const void* msg) { this->BoosterImuHandler(msg); }
+    );
+    channel_subscriber.InitChannel();
     
     // Keep thread alive until shutdown
     while (!shutdownMonocular) {
@@ -170,6 +173,7 @@ void MonocularMode::Img_callback(const sensor_msgs::msg::Image &msg)
 //EXAMPLE
 // IMU callback:
 void MonocularMode::BoosterImuHandler(const sensor_msgs::msg::Imu &msg) {
+    const LowState* low_state_msg = static_cast<const LowState*>(msg);
     std::lock_guard<std::mutex> lock(imuMutex);
     auto time = rclcpp::Clock().now();
     double timestamp = time.seconds() + time.nanoseconds() * 1e-9;
