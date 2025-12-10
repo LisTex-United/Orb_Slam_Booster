@@ -171,13 +171,9 @@ void MonocularMode::Img_callback(const sensor_msgs::msg::Image &msg)
 
 
 //EXAMPLE
-// IMU callback:
 void MonocularMode::BoosterImuHandler(const void* msg) {
     const LowState* low_state_msg = static_cast<const LowState*>(msg);
     std::lock_guard<std::mutex> lock(imuMutex);
-    auto time = rclcpp::Clock().now();
-    double timestamp = time.seconds() + time.nanoseconds() * 1e-9;
-    std::cout << "Received IMU message at time: " << timestamp << std::endl;
     ORB_SLAM3::IMU::Point imuPoint(
         low_state_msg->imu_state().acc()[0],      
         low_state_msg->imu_state().acc()[1],      
@@ -185,7 +181,7 @@ void MonocularMode::BoosterImuHandler(const void* msg) {
         low_state_msg->imu_state().gyro()[0],     
         low_state_msg->imu_state().gyro()[1],     
         low_state_msg->imu_state().gyro()[2],     
-        timestamp
+        0.0f
     );
     
     imuBuffer.push_back(imuPoint);
