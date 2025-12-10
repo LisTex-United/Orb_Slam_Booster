@@ -172,7 +172,7 @@ void MonocularMode::Img_callback(const sensor_msgs::msg::Image &msg)
 
 //EXAMPLE
 // IMU callback:
-void MonocularMode::BoosterImuHandler(const sensor_msgs::msg::Imu &msg) {
+void MonocularMode::BoosterImuHandler(const void* &msg) {
     const LowState* low_state_msg = static_cast<const LowState*>(msg);
     std::lock_guard<std::mutex> lock(imuMutex);
     auto time = rclcpp::Clock().now();
