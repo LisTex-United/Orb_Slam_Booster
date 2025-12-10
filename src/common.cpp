@@ -66,17 +66,43 @@ MonocularMode::MonocularMode() : Node("mono_node_cpp")
 
     //* subscrbite to the image messages coming from the Python driver node
     subImgMsg_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(subImgMsgName, 1, std::bind(&MonocularMode::Img_callback, this, _1));
-}
 
+    //* Initialize Booster SDK for IMU data
+    ChannelFactory::Instance()->Init(0);
+    imuThread = std::thread(&MonocularMode::runBoosterSubscriber, this);
+    
+    RCLCPP_INFO(this->get_logger(), "MonocularMode node initialized successfully");
+}
 //* Destructor
 MonocularMode::~MonocularMode()
 {
+    // Signal Booster thread to stop
+    shutdownMonocular = true;
+    
+    // Wait for Booster thread to finish
+    if (imuThread.joinable()) {
+        imuThread.join();
+    }
 
     // Stop all threads
     // Call method to write the trajectory file
     // Release resources and cleanly shutdown
     pAgent->Shutdown();
     pass;
+}
+
+void MonocularMode::runBoosterSubscriber()
+{
+    // Create subscriber with lambda that calls member function
+    ChannelSubscriber<LowState> channel_subscriber(TOPIC, this->BoosterImuHandler);
+    ImuSubscriber->InitChannel();
+    
+    // Keep thread alive until shutdown
+    while (!shutdownBooster) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(4));
+    }
+    
+    RCLCPP_INFO(this->get_logger(), "Booster IMU thread shutting down");
 }
 
 
@@ -99,12 +125,12 @@ void MonocularMode::initializeVSLAM(std::string &configString)
 
     // NOTE if you plan on passing other configuration parameters to ORB SLAM3 Systems class, do it here
     // NOTE you may also use a .yaml file here to set these values
-    sensorType = ORB_SLAM3::System::MONOCULAR;
+    sensorType = ORB_SLAM3::System::IMU_MONOCULAR; // IMU monocular
     enablePangolinWindow = true; // Shows Pangolin window output
     enableOpenCVWindow = true;   // Shows OpenCV window output
 
     pAgent = new ORB_SLAM3::System(vocFilePath, settingsFilePath, sensorType, enablePangolinWindow);
-    std::cout << "MonocularMode node initialized" << std::endl; // TODO needs a better message
+    std::cout << "MonocularMode node initialized" << std::endl; 
 }
 
 //* Callback to process image message and run SLAM node
@@ -112,6 +138,7 @@ void MonocularMode::Img_callback(const sensor_msgs::msg::Image &msg)
 {
     // Initialize
     cv_bridge::CvImagePtr cv_ptr; //* Does not create a copy, memory efficient
+    std::vector<ORB_SLAM3::IMU::Point> vImuMeas; 
     //* Convert ROS image to openCV image
     try
     {
@@ -123,11 +150,39 @@ void MonocularMode::Img_callback(const sensor_msgs::msg::Image &msg)
         RCLCPP_ERROR(this->get_logger(), "Error reading image");
         return;
     }
-
+    std::cout << "Received image at time: " << timeStep << std::endl;
     //* Perform all ORB-SLAM3 operations in Monocular mode
     //! Pose with respect to the camera coordinate frame not the world coordinate frame
-    Sophus::SE3f Tcw = pAgent->TrackMonocular(cv_ptr->image, timeStep);
+    {
+        std::lock_guard<std::mutex> lock(imuMutex);
+        vImuMeas = imuBuffer;  // Copy the buffer
+        imuBuffer.clear();     // Clear for next frame
+    }
+    
+    Sophus::SE3f Tcw = pAgent->TrackMonocular(cv_ptr->image, timeStep, vImuMeas);
     
     //* An example of what can be done after the pose w.r.t camera coordinate frame is computed by ORB SLAM3
     // Sophus::SE3f Twc = Tcw.inverse(); //* Pose with respect to global image coordinate, reserved for future use
+}
+
+
+
+//EXAMPLE
+// IMU callback:
+void MonocularMode::BoosterImuHandler(const sensor_msgs::msg::Imu &msg) {
+    std::lock_guard<std::mutex> lock(imuMutex);
+    auto time = rclcpp::Clock().now();
+    double timestamp = time.seconds() + time.nanoseconds() * 1e-9;
+    std::cout << "Received IMU message at time: " << timestamp << std::endl;
+    ORB_SLAM3::IMU::Point imuPoint(
+        low_state_msg->imu_state().acc()[0],      
+        low_state_msg->imu_state().acc()[1],      
+        low_state_msg->imu_state().acc()[2],      
+        low_state_msg->imu_state().gyro()[0],     
+        low_state_msg->imu_state().gyro()[1],     
+        low_state_msg->imu_state().gyro()[2],     
+        timestamp
+    );
+    
+    imuBuffer.push_back(imuPoint);
 }

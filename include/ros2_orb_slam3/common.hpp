@@ -45,6 +45,15 @@ using std::placeholders::_1; //* TODO why this is suggested in official tutorial
 #include <opencv2/core/eigen.hpp>
 #include <image_transport/image_transport.h>
 
+//Booster Libraries and definitions
+#include <booster/robot/channel/channel_subscriber.hpp>
+#include <booster/idl/b1/LowState.h>
+#define TOPIC "rt/low_state"
+
+using namespace booster::robot;
+using namespace booster::common;
+using namespace booster_interface::msg;
+
 //* ORB SLAM 3 includes
 #include "System.h" //* Also imports the ORB_SLAM3 namespace
 
@@ -74,19 +83,23 @@ private:
     std::string vocFilePath = "";                              // Path to ORB vocabulary provided by DBoW2 package
     std::string settingsFilePath = "";                         // Path to settings file provided by ORB_SLAM3 package
     std::string cameraFilePath = "";                           // Path to camera parameters file
-    bool bSettingsFromPython = false;                          // Flag set once when experiment setting from python node is received
+    bool bSettingsFromPython = false; 
+    std::thread imuThread;                                 // Thread to handle IMU data
+    std::mutex imuMutex;
+    std::atomic<bool> shutdownMonocular{false};
+    std::vector<ORB_SLAM3::IMU::Point> imuBuffer; // Buffer to store IMU points
 
     std::string subexperimentconfigName = ""; // Subscription topic name
     std::string pubconfigackName = "";        // Publisher topic name
     std::string subImgMsgName = "";           // Topic to subscribe to receive RGB images from a python node
     std::string subTimestepMsgName = "";      // Topic to subscribe to receive the timestep related to the
-
+    
     //* Definitions of publisher and subscribers
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr expConfig_subscription_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr configAck_publisher_;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr subImgMsg_subscription_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr subTimestepMsg_subscription_;
-
+    
     //* ORB_SLAM3 related variables
     ORB_SLAM3::System *pAgent; // pointer to a ORB SLAM3 object
     ORB_SLAM3::System::eSensor sensorType;
@@ -101,6 +114,11 @@ private:
     //* Helper functions
     // ORB_SLAM3::eigenMatXf convertToEigenMat(const std_msgs::msg::Float32MultiArray& msg); // Helper method, converts semantic matrix eigenMatXf, a Eigen 4x4 float matrix
     void initializeVSLAM(std::string &configString); //* Method to bind an initialized VSLAM framework to this node
+
+    //* Booster IMU handler
+    void BoosterImuHandler(const void* msg);
+    void runBoosterSubscriber();
+
 };
 
 #endif
