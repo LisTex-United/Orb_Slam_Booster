@@ -95,11 +95,11 @@ void MonocularMode::runBoosterSubscriber()
 {
     // Create subscriber with lambda that calls member function
     ChannelSubscriber<LowState> channel_subscriber(TOPIC, this->BoosterImuHandler);
-    ImuSubscriber->InitChannel();
+    channel_subscriber->InitChannel();
     
     // Keep thread alive until shutdown
-    while (!shutdownBooster) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(4));
+    while (!shutdownMonocular) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
     
     RCLCPP_INFO(this->get_logger(), "Booster IMU thread shutting down");
@@ -126,8 +126,8 @@ void MonocularMode::initializeVSLAM(std::string &configString)
     // NOTE if you plan on passing other configuration parameters to ORB SLAM3 Systems class, do it here
     // NOTE you may also use a .yaml file here to set these values
     sensorType = ORB_SLAM3::System::IMU_MONOCULAR; // IMU monocular
-    enablePangolinWindow = true; // Shows Pangolin window output
-    enableOpenCVWindow = true;   // Shows OpenCV window output
+    enablePangolinWindow = false; // Shows Pangolin window output
+    enableOpenCVWindow = false;   // Shows OpenCV window output
 
     pAgent = new ORB_SLAM3::System(vocFilePath, settingsFilePath, sensorType, enablePangolinWindow);
     std::cout << "MonocularMode node initialized" << std::endl; 
