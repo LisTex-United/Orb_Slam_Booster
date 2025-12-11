@@ -110,13 +110,6 @@ Finally, source ```.bashrc``` file
 ```bash
 source ~/.bashrc
 ```
- 
-### OpenCV
-Ubuntu 22.04 by default comes with >OpenCV 4.2. Check to make sure you have at least 4.2 installed. Run the following in a terminal
-
-```bash
-python3 -c "import cv2; print(cv2.__version__)" 
-```
 
 ## 2. Installation
 
@@ -130,8 +123,10 @@ git clone https://github.com/Mechazo11/ros2_orb_slam3.git
 cd .. # make sure you are in ~/ros2_ws root directory
 rosdep install -r --from-paths src --ignore-src -y --rosdistro humble
 source /opt/ros/humble/setup.bash
-export MAKEFLAGS="-j2"  #In more constrained systems
 colcon build --symlink-install
+```
+```bash
+export MAKEFLAGS="-j2"  #In more constrainted hardwares
 ```
 
 ## 3. Monocular Example:
@@ -144,26 +139,3 @@ cd ~/ros2_ws/
 source ./install/setup.bash
 ros2 run ros2_orb_slam3 mono_node_cpp --ros-args -p node_name_arg:=mono_slam_cpp
 ```
-
-**Not Needed Anymore** In another terminal [python node]
-
-```bash
-cd ~/ros2_ws
-source ./install/setup.bash
-ros2 run ros2_orb_slam3 mono_driver_node.py --ros-args -p settings_name:=EuRoC -p image_seq:=sample_euroc_MH05
-ros2 run ros2_orb_slam3 mono_driver_node.py --ros-args -p settings_name:=RealSense_Booster.yaml
-```
-
-Both nodes would perform a handshake and the VSLAM framework would then work as shown in the following video clip
-
-
-https://github.com/Mechazo11/ros2_orb_slam3/assets/44814419/af9eaa79-da4b-4405-a4d7-e09242ab9660
-
-
-Thank you for taking the time in checking this project out. I hope it helps you out. If you find this package useful in your project consider citing the papers mentioned above
-
-## TODO next version:
-
-- [ ] Stereo mode example
-- [ ] RGBD mode example
-- [ ] Detailed build instructions for `aarch64` based computers i.e. Orin Nano, Raspberry Pi etc.
