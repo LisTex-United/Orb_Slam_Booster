@@ -12,8 +12,8 @@
 #include <thread>  // class to represent individual threads of execution.
 #include <mutex>   // A mutex is a lockable object that is designed to signal when critical sections of code need exclusive access, preventing other threads with the same protection from executing concurrently and access the same memory locations.
 #include <cstdlib> // to find home directory
+#include <atomic>
 
-#include <cstring>
 #include <sstream> // String stream processing functionalities
 
 //* ROS2 includes
@@ -62,7 +62,7 @@ public:
     std::vector<ORB_SLAM3::IMU::Point> imuMeas;
     std::vector<std::pair<cv::Point3f, double>> gyroBuffer;  // Buffer to store gyro measurements
     std::vector<std::pair<cv::Point3f, double>> accelBuffer; // Buffer to store accelerometer measurements
-    
+
     //* Class constructor
     MonocularMode(); // Constructor
 
@@ -85,6 +85,9 @@ private:
     ORB_SLAM3::System::eSensor sensorType;
     bool enablePangolinWindow = false; // Shows Pangolin window output
     bool enableOpenCVWindow = false;   // Shows OpenCV window output
+
+    // Threading for IMU subscriptions is now handled by MultiThreadedExecutor
+    mutable std::mutex bufferMutex;
 
     //* ROS callbacks
     void experimentSetting_callback(const std_msgs::msg::String &msg); // Callback to process settings sent over by Python node

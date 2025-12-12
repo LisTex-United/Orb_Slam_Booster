@@ -36,34 +36,39 @@ MonocularMode::MonocularMode() : Node("mono_node_cpp")
     rclcpp::Parameter param4 = this->get_parameter("camera");
     cameraFilePath = param4.as_string();
 
+    timeStep = 0.0;
     //* DEBUG print
     RCLCPP_INFO(this->get_logger(), "nodeName %s", nodeName.c_str());
     RCLCPP_INFO(this->get_logger(), "voc_file %s", vocFilePath.c_str());
     this->initializeVSLAM(cameraFilePath); // Initialize VSLAM with camera settings
-
     //* Image subscription
     const std::string imageTopic = "/camera/camera/color/image_raw"; // topic to receive RGB image messages
     imageSubscriber = this->create_subscription<sensor_msgs::msg::Image>(imageTopic, 1, std::bind(&MonocularMode::imageCallback, this, _1));
 
-    //* IMU subscriptions (GYRO + ACCELEROMETER)
-    const std::string gyroTopic = "/camera/camera/gyro/sample"; // topic to receive Gyro messages
+    //* IMU subscriptions (GYRO + ACCELEROMETER) in a separate callback group
+    auto imuCallbackGroup = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    rclcpp::SubscriptionOptions imuSubOptions;
+    imuSubOptions.callback_group = imuCallbackGroup;
+
+    const std::string gyroTopic = "/camera/camera/gyro/sample";
     gyroSubscriber = this->create_subscription<sensor_msgs::msg::Imu>(
         gyroTopic,
         rclcpp::SensorDataQoS(),
-        std::bind(&MonocularMode::gyroCallback, this, _1));
+        std::bind(&MonocularMode::gyroCallback, this, _1),
+        imuSubOptions);
 
-    const std::string accelTopic = "/camera/camera/accel/sample"; // topic to receive Accelerometer messages
+    const std::string accelTopic = "/camera/camera/accel/sample";
     accelSubscriber = this->create_subscription<sensor_msgs::msg::Imu>(
         accelTopic,
         rclcpp::SensorDataQoS(),
-        std::bind(&MonocularMode::accelCallback, this, _1));
+        std::bind(&MonocularMode::accelCallback, this, _1),
+        imuSubOptions);
 
     RCLCPP_INFO(this->get_logger(), "MonocularMode node initialized successfully");
 }
 //* Destructor
 MonocularMode::~MonocularMode()
 {
-    // Stop all threads
     // Call method to write the trajectory file
     // Release resources and cleanly shutdown
     pAgent->Shutdown();
@@ -100,14 +105,14 @@ void MonocularMode::initializeVSLAM(std::string &configString)
 //* Callback to process image message and run SLAM node
 void MonocularMode::imageCallback(const sensor_msgs::msg::Image &msg)
 {
-    imuMeas.clear();
-    cv_bridge::CvImagePtr cv_ptr;
     // Constructors of Point struct
     //  Point(const float &acc_x, const float &acc_y, const float &acc_z,
     //           const float &ang_vel_x, const float &ang_vel_y, const float &ang_vel_z,
     //           const double &timestamp): a(acc_x,acc_y,acc_z), w(ang_vel_x,ang_vel_y,ang_vel_z), t(timestamp){}
     //  Point(const cv::Point3f Acc, const cv::Point3f Gyro, const double &timestamp):
     //      a(Acc.x,Acc.y,Acc.z), w(Gyro.x,Gyro.y,Gyro.z), t(timestamp){}
+    cv_bridge::CvImagePtr cv_ptr;
+    double prev_timeStep = timeStep;
     //* Convert ROS image to openCV image
     try
     {
@@ -120,23 +125,50 @@ void MonocularMode::imageCallback(const sensor_msgs::msg::Image &msg)
         return;
     }
     // Interpolate accel to gyro timestamps
-    if (!gyroBuffer.empty() && !accelBuffer.empty())
+    std::vector<std::pair<cv::Point3f, double>> localGyroBuffer;
+    std::vector<std::pair<cv::Point3f, double>> localAccelBuffer;
+
+    {
+        std::lock_guard<std::mutex> lock(bufferMutex);
+        // Partition gyroBuffer
+        auto gyroSplit = std::find_if(
+            gyroBuffer.begin(), gyroBuffer.end(),
+            [this](const auto &item)
+            {
+                return item.second > timeStep;
+            });
+        localGyroBuffer.assign(gyroBuffer.begin(), gyroSplit);
+        gyroBuffer.erase(gyroBuffer.begin(), gyroSplit);
+
+        // Partition accelBuffer
+        auto accelSplit = std::find_if(
+            accelBuffer.begin(), accelBuffer.end(),
+            [this](const auto &item)
+            {
+                return item.second > timeStep;
+            });
+        localAccelBuffer.assign(accelBuffer.begin(), accelSplit);
+        accelBuffer.erase(accelBuffer.begin(), accelSplit);
+    }
+
+    if (!localGyroBuffer.empty() && !localAccelBuffer.empty())
     {
         size_t accelIdx = 0;
-        for (const auto &gyro : gyroBuffer)
+        for (const auto &gyro : localGyroBuffer)
         {
             double gyroTime = gyro.second;
+            if (gyroTime < prev_timeStep)
+                continue;
             // Find accel samples before and after gyroTime
-            while (accelIdx + 1 < accelBuffer.size() && accelBuffer[accelIdx + 1].second < gyroTime)
+            while (accelIdx + 1 < localAccelBuffer.size() && localAccelBuffer[accelIdx + 1].second < gyroTime)
                 ++accelIdx;
 
             // If out of bounds, skip
-            if (accelIdx + 1 >= accelBuffer.size())
+            if (accelIdx + 1 >= localAccelBuffer.size())
                 break;
 
-            const auto &a0 = accelBuffer[accelIdx];
-            const auto &a1 = accelBuffer[accelIdx + 1];
-
+            const auto &a0 = localAccelBuffer[accelIdx];
+            const auto &a1 = localAccelBuffer[accelIdx + 1];
             // Linear interpolation
             double t0 = a0.second, t1 = a1.second;
             cv::Point3f accInterp;
@@ -146,10 +178,7 @@ void MonocularMode::imageCallback(const sensor_msgs::msg::Image &msg)
                 accInterp = a0.first * (1.0f - alpha) + a1.first * alpha;
             }
             else
-            {
-                // std::cout << "Warning: Duplicate accel timestamps at " << t0 << std::endl;
                 accInterp = a0.first;
-            }
 
             // Add to imuMeas
             imuMeas.emplace_back(
@@ -157,8 +186,6 @@ void MonocularMode::imageCallback(const sensor_msgs::msg::Image &msg)
                 gyro.first.x, gyro.first.y, gyro.first.z,
                 gyroTime);
         }
-        // std::cout << "Interpolated " << imuMeas.size() << " IMU measurements for current image." << std::endl;
-        // std::cout << "Gyro buffer size: " << gyroBuffer.size() << ", Accel buffer size: " << accelBuffer.size() << std::endl;
     }
     if (imuMeas.empty())
     {
@@ -169,34 +196,33 @@ void MonocularMode::imageCallback(const sensor_msgs::msg::Image &msg)
     //* Perform all ORB-SLAM3 operations in Monocular mode
     Sophus::SE3f Tcw = pAgent->TrackMonocular(cv_ptr->image, timeStep, imuMeas);
     // Clear buffers after processing
-    gyroBuffer.clear();
-    accelBuffer.clear();
+    imuMeas.clear();
 }
 
 void MonocularMode::gyroCallback(const sensor_msgs::msg::Imu &msg)
 {
-    // Store gyro measurements in buffer
     double time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9; // Timestamp
-    if (time <= timeStep)
-        return;
     std::pair<cv::Point3f, double> gyroMeasurement;
     gyroMeasurement.first.x = msg.angular_velocity.x;
     gyroMeasurement.first.y = msg.angular_velocity.y;
     gyroMeasurement.first.z = msg.angular_velocity.z;
     gyroMeasurement.second = time;
+    if (time <= timeStep)
+        return;
+    std::lock_guard<std::mutex> lock(bufferMutex); // Lock mutex for buffer access
     gyroBuffer.push_back(gyroMeasurement);
 }
 
 void MonocularMode::accelCallback(const sensor_msgs::msg::Imu &msg)
 {
     double time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9;
-    if (time <= timeStep)
-        return;
-    // Store accelerometer measurements in buffer
     std::pair<cv::Point3f, double> accelMeasurement;
     accelMeasurement.first.x = msg.linear_acceleration.x;
     accelMeasurement.first.y = msg.linear_acceleration.y;
     accelMeasurement.first.z = msg.linear_acceleration.z;
     accelMeasurement.second = time;
+    if (time <= timeStep)
+        return;
+    std::lock_guard<std::mutex> lock(bufferMutex); // Lock mutex for buffer access
     accelBuffer.push_back(accelMeasurement);
 }
