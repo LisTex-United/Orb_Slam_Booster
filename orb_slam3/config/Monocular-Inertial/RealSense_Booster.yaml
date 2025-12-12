@@ -36,17 +36,27 @@ IMU.T_b_c1: !!opencv-matrix
    rows: 4
    cols: 4
    dt: f
-   data: [1.000,  0.001,  0.001, -0.029,
-         -0.001,  1.000,  0.000, -0.007,
-         -0.001, -0.000,  1.000, -0.016,
-         0.000,  0.000,  0.000,  1.000]
-        
+   data: [1, 0, 0, -0.029,
+          0, 1, 0, -0.007,
+          0, 0, 1, -0.016,
+          0.0, 0.0, 0.0, 1.0]
+
+# Do not insert KFs when recently lost
+IMU.InsertKFsWhenLost: 0
+
 # IMU noise (Use those from VINS-mono)
-IMU.NoiseGyro: 5e-4 # 2.44e-4 #1e-3 # rad/s^0.5
-IMU.NoiseAcc: 5e-3 # 1.47e-3 #1e-2 # m/s^1.5
-IMU.GyroWalk: 1e-5 # rad/s^1.5
-IMU.AccWalk: 2e-3 # m/s^2.5
+IMU.NoiseGyro: 1e-3 # 2.44e-4 #1e-3 # rad/s^0.5
+IMU.NoiseAcc: 1e-2 # 1.47e-3 #1e-2 # m/s^1.5
+IMU.GyroWalk: 1e-6 # rad/s^1.5
+IMU.AccWalk: 1e-4 # m/s^2.5
 IMU.Frequency: 200.0
+        
+# # IMU noise (Use those from VINS-mono)
+# IMU.NoiseGyro: 5e-4 # 2.44e-4 #1e-3 # rad/s^0.5
+# IMU.NoiseAcc: 5e-3 # 1.47e-3 #1e-2 # m/s^1.5
+# IMU.GyroWalk<: 1e-5 # rad/s^1.5
+# IMU.AccWalk: 2e-3 # m/s^2.5
+# IMU.Frequency: 200.0
 
 #--------------------------------------------------------------------------------------------  
 # ORB Parameters 
