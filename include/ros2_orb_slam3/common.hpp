@@ -53,20 +53,17 @@ using std::placeholders::_1; //* TODO why this is suggested in official tutorial
 #define pass (void)0 // Python's equivalent of "pass" i.e. no operation
 
 //* Node specific definitions
-class MonocularMode : public rclcpp::Node
+class StereoMode : public rclcpp::Node
 {
     //* This slam node inherits from both rclcpp and ORB_SLAM3::System classes
     //* public keyword needs to come before the class constructor and anything else
 public:
     double timeStep; // Timestep data received from the python node
-    std::vector<ORB_SLAM3::IMU::Point> imuMeas;
-    std::vector<std::pair<cv::Point3f, double>> gyroBuffer;  // Buffer to store gyro measurements
-    std::vector<std::pair<cv::Point3f, double>> accelBuffer; // Buffer to store accelerometer measurements
 
     //* Class constructor
-    MonocularMode(); // Constructor
+    StereoMode(); // Constructor
 
-    ~MonocularMode(); // Destructor
+    ~StereoMode(); // Destructor
 
 private:
     // Class internal variables
@@ -75,10 +72,10 @@ private:
     std::string settingsFilePath = ""; // Path to settings file provided by ORB_SLAM3 package
     std::string cameraFilePath = "";   // Path to camera parameters file
 
+    std::map<std::string, cv_bridge::CvImagePtr> imageBuffer;
     //* Definitions of publisher and subscribers
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr imageSubscriber;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr gyroSubscriber;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr accelSubscriber;
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr imageSubscriber1;
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr imageSubscriber2;
 
     //* ORB_SLAM3 related variables
     ORB_SLAM3::System *pAgent; // pointer to a ORB SLAM3 object
@@ -90,14 +87,10 @@ private:
     mutable std::mutex bufferMutex;
 
     //* ROS callbacks
-    void experimentSetting_callback(const std_msgs::msg::String &msg); // Callback to process settings sent over by Python node
-    void imageCallback(const sensor_msgs::msg::Image &msg);            // Callback to process RGB image and semantic matrix sent by Python node
+    void imageCallback(const sensor_msgs::msg::Image &msg); // Callback to process RGB image and semantic matrix sent by Python node
 
     //* Helper functions
     void initializeVSLAM(std::string &configString); //* Method to bind an initialized VSLAM framework to this node
-
-    void gyroCallback(const sensor_msgs::msg::Imu &msg);  // Callback to process gyro messages
-    void accelCallback(const sensor_msgs::msg::Imu &msg); // Callback to process accelerometer messages
 };
 
 #endif
