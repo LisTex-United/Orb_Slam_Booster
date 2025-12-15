@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     rclcpp::init(argc, argv); // Always the first line, initialize this node
 
     //* Declare a node object
-    auto node = std::make_shared<MonocularMode>();
+    auto node = std::make_shared<StereoMode>();
 
     // Use MultiThreadedExecutor for concurrent callbacks
     rclcpp::executors::MultiThreadedExecutor exec;
