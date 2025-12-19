@@ -2837,6 +2837,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     for(map<int,int>::iterator mit=mVisEdges.begin(), mend=mVisEdges.end(); mit!=mend; mit++)
     {
         assert(mit->second>=3);
+        // if(mit->second<3)
+        // {
+        //         cout << "WARNING: KeyFrame " << mit->first << " has only " << mit->second << " edges." << endl;
+        
+        // }
     }
 
     optimizer.initializeOptimization();

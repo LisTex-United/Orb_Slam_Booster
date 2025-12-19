@@ -26,6 +26,7 @@ find_package(OpenCV 4.2 REQUIRED)
 find_package(Eigen3 3.3.0 REQUIRED) # Matched with Sophus
 find_package(Pangolin REQUIRED)
 find_package(image_transport REQUIRED)
+find_package(message_filters REQUIRED)
 
 
 # Header file locations [C++ node]
@@ -124,8 +125,6 @@ add_library(orb_slam3_lib SHARED
   orb_slam3/include/Settings.h
 )
 
-set_target_properties(orb_slam3_lib PROPERTIES VERSION "${orb_slam3_lib_VERSION}") # TODO need to findout why this is required
-
 ament_target_dependencies(orb_slam3_lib
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
@@ -196,9 +195,36 @@ install(DIRECTORY
 ament_export_include_directories(include)
 
 # Help downstream packages to find transitive dependencies
-ament_export_dependencies(
-  orb_slam3_lib
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+add_executable(mono
+  src/monocular/mono.cpp
+  src/monocular/monocular-slam-node.cpp
 )
+ament_target_dependencies(mono rclcpp sensor_msgs cv_bridge Pangolin OpenCV)
+target_link_libraries(mono orb_slam3_lib)
+
+add_executable(rgbd
+  src/rgbd/rgbd.cpp
+  src/rgbd/rgbd-slam-node.cpp
+)
+ament_target_dependencies(rgbd rclcpp sensor_msgs cv_bridge message_filters Pangolin OpenCV)
+target_link_libraries(rgbd orb_slam3_lib)
+
+add_executable(stereo
+  src/stereo/stereo.cpp
+  src/stereo/stereo-slam-node.cpp
+)
+ament_target_dependencies(stereo rclcpp sensor_msgs cv_bridge message_filters Pangolin OpenCV)
+target_link_libraries(stereo orb_slam3_lib)
+
+add_executable(stereo-inertial
+  src/stereo-inertial/stereo-inertial.cpp
+  src/stereo-inertial/stereo-inertial-node.cpp
+)
+ament_target_dependencies(stereo-inertial rclcpp sensor_msgs cv_bridge Pangolin OpenCV)
+target_link_libraries(stereo-inertial orb_slam3_lib)
+
+install(TARGETS mono rgbd stereo stereo-inertial DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
