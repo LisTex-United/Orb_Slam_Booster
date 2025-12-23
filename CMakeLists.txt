@@ -197,20 +197,6 @@ ament_export_include_directories(include)
 # Help downstream packages to find transitive dependencies
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 
-add_executable(mono
-  src/monocular/mono.cpp
-  src/monocular/monocular-slam-node.cpp
-)
-ament_target_dependencies(mono rclcpp sensor_msgs cv_bridge Pangolin OpenCV)
-target_link_libraries(mono orb_slam3_lib)
-
-add_executable(rgbd
-  src/rgbd/rgbd.cpp
-  src/rgbd/rgbd-slam-node.cpp
-)
-ament_target_dependencies(rgbd rclcpp sensor_msgs cv_bridge message_filters Pangolin OpenCV)
-target_link_libraries(rgbd orb_slam3_lib)
-
 add_executable(stereo
   src/stereo/stereo.cpp
   src/stereo/stereo-slam-node.cpp
@@ -225,6 +211,6 @@ add_executable(stereo-inertial
 ament_target_dependencies(stereo-inertial rclcpp sensor_msgs cv_bridge Pangolin OpenCV)
 target_link_libraries(stereo-inertial orb_slam3_lib)
 
-install(TARGETS mono rgbd stereo stereo-inertial DESTINATION lib/${PROJECT_NAME})
+install(TARGETS stereo stereo-inertial DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

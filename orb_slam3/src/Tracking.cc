@@ -624,6 +624,7 @@ void Tracking::newParameterLoader(Settings *settings) {
     //ORB parameters
     int nFeatures = settings->nFeatures();
     int nLevels = settings->nLevels();
+    //mFastInit = true;
     int fIniThFAST = settings->initThFAST();
     int fMinThFAST = settings->minThFAST();
     float fScaleFactor = settings->scaleFactor();
